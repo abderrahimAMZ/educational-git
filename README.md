@@ -1,6 +1,5 @@
 [![progress-banner](https://backend.codecrafters.io/progress/git/9b407032-2bc4-4c28-88ef-9e4656514700)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-this is fun!
 This is a starting point for Rust solutions to the
 ["Build Your Own Git" Challenge](https://codecrafters.io/challenges/git).
 
