@@ -1,11 +1,15 @@
+mod blob;
+
 use flate2::read;
 use flate2::read::ZlibDecoder;
 #[allow(unused_imports)]
 use std::env;
 #[allow(unused_imports)]
 use std::fs;
+use std::fs::File;
+use std::io::BufReader;
 use std::io::Read;
-
+use blob::Blob;
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 
 fn main() {
@@ -25,6 +29,21 @@ fn main() {
                         .long("p")
                         .action(ArgAction::Set)
                         .value_name("FILE"),
+                ),
+        )
+        .subcommand(
+            Command::new("hash-object")
+                .arg_required_else_help(true)
+                .about("hashes your object and stores it in the objects folder")
+                .arg(
+                    Arg::new("p")
+                        .required(true)
+                        .action(ArgAction::Set)
+                )
+                .arg(
+                    Arg::new("w")
+                        .short('w')
+                        .action(ArgAction::SetTrue)
                 ),
         )
         .get_matches();
@@ -56,16 +75,37 @@ fn main() {
                     first_two_letters, whats_left_from_file_name
                 );
 
-                let file_content =
-                    fs::read_to_string(file_path.clone()).expect("error in the specified path");
-                /*
-                let mut decoder = ZlibDecoder::new(file_content);
-                let mut content: Vec<u8> = vec![];
-                decoder.read_to_end(&mut content).unwrap();
-                */
-                print!("{:?}", file_content);
+                let mut out = String::new();
+                let mut decoder = ZlibDecoder::new(BufReader::new(
+                    File::open(file_path.clone()).expect("error opening file "),
+                ));
+                decoder.read_to_string(&mut out);
+                let mut index =  out.find("\0").unwrap_or_else(|| out.len());
+                if index  != out.len() {
+                    index = index +1;
+                }
+                let (blog, output) = out.split_at(index);
+                print!("{}", output);
             }
             None => panic!("provide file name"),
+        },
+        Some(("hash-object", submatches)) => {
+
+
+            let blob;
+
+            match submatches.get_one::<String>("p") {
+                Some(file_name) => {
+                    blob = Blob::new(file_name);
+                    blob.print_hash();
+
+                }
+                None => panic!("provide file name"),
+            }
+            match submatches.get_flag("w") {
+                true => blob.write_to_objects(),
+                false => (),
+            }
         },
         _ => (),
     }
